@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" text="text/css" href="/styles.css" />
+  </head>
+  <body>
+    <section id="todo-container">
+      <h1>TODO</h1>
+      <input type="text" id="todo-input" />
+      <input type="button" value="저장" id="save-button" onclick="addTodo()" />
+      <ul id="todo-list" class="todo-list">
+        <li>밥 먹기</li>
+        <li>2시 약속</li>
+      </ul>
+      <ul class="todo-list"></ul>
+    </section>
+    <script>
+      const title = document.getElementsByTagName('h1');
+      console.log(title[0].innerHTML);
+      const todoList = document.getElementById('todo-list');
+
+      const saveButton = document.getElementById('save-button');
+
+      // saveButton.addEventListener('click', () => {});
+
+      function addTodo() {
+        const todoInput = document.getElementById('todo-input');
+
+        if (todoInput.value === '') {
+          alert('값을 입력해주세요');
+          return;
+        }
+
+        const check = confirm(`"${todoInput.value}" 저장하시겠습니까?`);
+
+        if (check) {
+          const todo = document.createElement('li');
+          todo.innerHTML = todoInput.value;
+          todoList.appendChild(todo);
+          todoInput.value = '';
+        }
+      }
+    </script>
+  </body>
+</html>
