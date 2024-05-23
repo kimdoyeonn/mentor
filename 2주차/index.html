@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TODO LIST</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/reset-css@5.0.2/reset.min.css "
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      as="style"
+      crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: Pretendard;
+      }
+
+      .title {
+        font-size: 2.5rem;
+        font-weight: 700;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        background-color: #f3f3f3;
+      }
+
+      #container {
+        background-color: white;
+        width: 100%;
+        max-width: 30rem;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1),
+          0 1px 2px -1px rgb(0 0 0 / 0.1);
+
+        padding: 20px;
+        margin: 30px;
+        border-radius: 15px;
+      }
+
+      #todo-list {
+        width: 100%;
+      }
+
+      #todo-list li {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+      }
+
+      .input-container {
+        width: 100%;
+      }
+
+      .todo-input {
+        width: 100%;
+        padding: 10px;
+        font-size: 1.1rem;
+        border-radius: 20px;
+        padding-left: 16px;
+      }
+
+      .done {
+        text-decoration: line-through;
+        color: #b3b3b3;
+      }
+
+      .filter-container {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1 class="title">TODO LIST</h1>
+      <div class="input-container">
+        <input
+          type="text"
+          class="todo-input"
+          onkeyup="handleInputEnter(event)"
+        />
+      </div>
+      <div class="filter-container" onchange="handleFilterChange(event)">
+        <select id="todo-filter">
+          <option value="all">전체</option>
+          <option value="todo">할일</option>
+          <option value="done">완료</option>
+        </select>
+      </div>
+      <ul id="todo-list"></ul>
+    </div>
+  </body>
+  <script>
+    const todoContainer = document.querySelector('#todo-list');
+    const todoInput = document.querySelector('.todo-input');
+
+    let todoList = JSON.parse(localStorage.getItem('todo-list') ?? '[]');
+
+    todoList.forEach((todo) => {
+      createTodoElement(todo);
+    });
+
+    function setLocalStorage(todoList) {
+      localStorage.setItem('todo-list', JSON.stringify(todoList));
+    }
+
+    function handleFilterChange(event) {
+      // ul#todo-list 내부를 비워줌
+      todoContainer.innerHTML = '';
+
+      // select#todo-filter 의 값을 가져옴 -> filterValue
+      const filterValue = event.target.value;
+
+      // filterValue에 따라서 todoList를 필터링
+      let filteredTodoList = todoList;
+
+      switch (filterValue) {
+        case 'todo':
+          filteredTodoList = todoList.filter((todo) => todo.state === 'todo');
+          break;
+        case 'done':
+          filteredTodoList = todoList.filter((todo) => todo.state === 'done');
+          break;
+        case 'all':
+          break;
+      }
+
+      // 필터링된 결과를 ul#todo-list에 뿌려줌
+      filteredTodoList.forEach((todo) => {
+        createTodoElement(todo);
+      });
+    }
+
+    function saveTodo(value, state) {
+      const todoId = Date.now();
+
+      const newTodo = {
+        id: todoId,
+        value,
+        state,
+      };
+
+      todoList.push(newTodo);
+
+      setLocalStorage(todoList);
+
+      return newTodo;
+    }
+
+    function createTodoElement(todo) {
+      const { id, value, state } = todo;
+
+      const li = document.createElement('li');
+
+      const label = document.createElement('label');
+      label.setAttribute('for', id);
+      label.innerHTML = value;
+
+      const checkbox = document.createElement('input');
+      checkbox.setAttribute('type', 'checkbox');
+      checkbox.setAttribute('id', id);
+
+      if (state === 'done') {
+        label.classList.add('done');
+        checkbox.checked = true;
+      }
+
+      checkbox.addEventListener('click', (event) => {
+        const id = Number(event.target.id);
+        const label = event.target.nextSibling;
+
+        if (event.target.checked) {
+          // done class 추가
+          label.classList.add('done');
+        } else {
+          // done class 제거
+          label.classList.remove('done');
+        }
+
+        // 업데이트된 투두리스트를 저장해줌
+        todoList = todoList.map((todo) => {
+          // 해당하는 todo를 찾아서
+          if (todo.id === id) {
+            // state : todo => done
+            if (event.target.checked) {
+              todo.state = 'done';
+            } else {
+              todo.state = 'todo';
+            }
+          }
+          return todo;
+        });
+
+        setLocalStorage(todoList);
+      });
+
+      const deleteButton = document.createElement('button');
+      deleteButton.setAttribute('type', 'button');
+      deleteButton.setAttribute('value', id);
+      deleteButton.innerHTML = 'X';
+
+      deleteButton.addEventListener('click', (event) => {
+        event.target.parentElement.remove();
+        todoList = todoList.filter(
+          (todo) => todo.id !== Number(event.target.value)
+        );
+
+        setLocalStorage(todoList);
+      });
+
+      const editButton = document.createElement('button');
+      editButton.setAttribute('type', 'button');
+      editButton.setAttribute('value', id);
+      editButton.innerHTML = 'Edit';
+
+      editButton.addEventListener('click', (event) => {
+        const parentElement = event.target.parentElement;
+        parentElement.innerHTML = '';
+
+        const currentTodoId = Number(event.target.value);
+        const currentTodo = todoList.filter(
+          (todo) => todo.id === currentTodoId
+        )[0];
+
+        const textInput = document.createElement('input');
+        textInput.setAttribute('type', 'text');
+        // textInput.value = currentTodo.value;
+        textInput.value = value;
+
+        const saveButton = document.createElement('button');
+        saveButton.setAttribute('type', 'button');
+        saveButton.setAttribute('value', event.target.value);
+        saveButton.innerHTML = 'Save';
+
+        saveButton.addEventListener('click', (event) => {
+          const todoId = Number(event.target.value);
+          const parentElement = event.target.parentElement;
+          const typedValue = textInput.value;
+
+          todoList = todoList.map((todo) => {
+            if (todo.id === todoId) {
+              todo.value = typedValue;
+            }
+            return todo;
+          });
+
+          setLocalStorage(todoList);
+
+          label.innerHTML = typedValue;
+          parentElement.innerHTML = '';
+
+          parentElement.appendChild(checkbox);
+          parentElement.appendChild(label);
+          parentElement.appendChild(editButton);
+          parentElement.appendChild(deleteButton);
+        });
+
+        parentElement.appendChild(textInput);
+        parentElement.appendChild(saveButton);
+      });
+
+      li.appendChild(checkbox);
+      li.appendChild(label);
+      li.appendChild(editButton);
+      li.appendChild(deleteButton);
+
+      todoContainer.appendChild(li);
+    }
+
+    function handleInputEnter(event) {
+      const todoFilter = document.querySelector('#todo-filter');
+
+      if (event.key === 'Enter' && todoInput.value !== '') {
+        const newTodo = saveTodo(
+          todoInput.value,
+          todoFilter.value === 'done' ? 'done' : 'todo'
+        );
+        createTodoElement(newTodo);
+        todoInput.value = '';
+      }
+    }
+  </script>
+</html>
